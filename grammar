@@ -1,0 +1,16 @@
+start = melody $ ;
+melody = { beat } ;
+beat = @:note
+     | @:pair
+     | @:triplet
+     | type:`rest` '.'
+     | type:`sustain` '-'
+     | @:harmony ;
+note = letter:upperletter acc:accidental upoctave:{ "'" }
+     | letter:lowerletter [ acc:accidental ] downoctave:{ ',' } ;
+upperletter = /[A-G]/ ;
+lowerletter = /[a-g]/ ;
+accidental = type:`sharp` acc_arr:{ '#' }+ | type:`flat` acc_arr:{ '@' }+ | type:`natural`;
+pair = type:`pair` '[' subbeats+:beat subbeats+:beat ']' ;
+triplet = type:`triplet` '(' subbeats+:beat subbeats+:beat subbeats+:beat ')' ;
+harmony = type: `harmony` '{' melodies+:melody { '|' melodies+:melody } '}' ;

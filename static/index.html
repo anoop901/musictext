@@ -1,0 +1,105 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+   		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		
+		<title>Music Text</title>
+		<script src='//code.jquery.com/jquery-1.11.2.min.js'></script>
+		
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+		
+		<style type="text/css">
+			textarea {
+				border:1px solid #999999;
+				font-family:monospace;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div class='container'>
+			
+			<h1>MusicText</h1>
+			<form id='musictextform' action='/to_wav'>
+				<div class='form-group'>
+					<label for='musictext'>Type your music text here:</label>
+					<textarea rows=10 class='form-control' name="musictext"></textarea>
+				</div>
+				<button name='convert-all' class='btn btn-primary'>Convert All</button>
+				<button name='convert-selected' class='btn btn-default'>Convert Selected</button>
+			</form>
+			
+			<div id='audiocontainer'>
+				Audio will appear here when you click "Convert".
+			</div>
+		</div>
+		
+		<script>
+			/* global $ */
+			$(function() {
+				
+				$('#musictextform').submit(function (e) {
+					e.preventDefault();
+				});
+				
+				function requestMusicText(musictext) {
+					
+					var loadingElem = $('<p>');
+					loadingElem.text('Creating audio...')
+					
+					var audiocontainerElem = $('#audiocontainer');
+					audiocontainerElem.empty();
+					audiocontainerElem.append(loadingElem);
+					
+					$.post('/wav', {musictext: musictext}, function(data) {
+						
+						if (data['success']) {
+							var song_id = data['song_id']
+							var src = '/wav?song_id=' + encodeURIComponent(song_id);
+							
+							var audioElem = $('<audio>');
+							var sourceElem = $('<source>');
+							audioElem.attr('controls', 'controls');
+							audioElem.append(sourceElem);
+							sourceElem.attr({
+								'src': src,
+								'type': 'audio/wav'
+							});
+							
+							audiocontainerElem.empty();
+							audiocontainerElem.append(audioElem);
+						} else {
+							var errorElem = $('<div>');
+							errorElem.addClass('alert alert-danger');
+							errorElem.append($('<p>').append(
+								$('<p>').text('Parsing error: '),
+								$('<pre>').text(data['message'])));
+							
+							audiocontainerElem.empty();
+							audiocontainerElem.append(errorElem);
+						}
+					}, 'json');
+				}
+				
+				$('#musictextform button[name=convert-all]').click(function (e) {
+					e.preventDefault();
+					var musictext = $('#musictextform textarea[name=musictext]').val();
+					requestMusicText(musictext);
+				});
+				
+				$('#musictextform button[name=convert-selected]').click(function (e) {
+					e.preventDefault();
+					var textarea = $('#musictextform textarea[name=musictext]')[0];
+					var musictext = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+					requestMusicText(musictext);
+				});
+			});
+		</script>
+		
+	</body>
+</html>
